@@ -1,0 +1,15 @@
+# Godot editor cache
+output/godot-project/.godot/
+
+# Godot import cache
+output/godot-project/.import/
+output/godot-project/**/*.import
+
+# Export presets (may contain sensitive paths)
+output/godot-project/export_presets.cfg
+
+# macOS
+.DS_Store
+
+# Claude Code
+.claude/settings.local.json

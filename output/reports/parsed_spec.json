@@ -1,0 +1,90 @@
+{
+  "version": "prototype-001-penguin",
+  "scope": "penguin_basic_prototype",
+  "task_goal": "작업 목표 #001 — 펭귄 기본 프로토타입",
+  "map": {
+    "type": "flat_plane",
+    "size_m": 50,
+    "boundary_walls": true,
+    "wall_height_m": 3.0,
+    "wall_thickness_m": 0.5
+  },
+  "player": {
+    "node_type": "CharacterBody3D",
+    "mesh": "CapsuleMesh",
+    "appearance": "penguin_placeholder",
+    "input": {
+      "move": "WASD",
+      "sprint": "Shift",
+      "jump": "Space",
+      "attack": "mouse_right_click"
+    },
+    "physics": {
+      "move_speed": "MOVE_SPEED",
+      "sprint_multiplier": 1.8,
+      "jump_velocity": "JUMP_VELOCITY",
+      "gravity": 9.8
+    },
+    "camera": "SpringArm3D",
+    "attack": {
+      "range_m": 2.0,
+      "target": "bots_only"
+    }
+  },
+  "bot": {
+    "node_type": "CharacterBody3D",
+    "mesh": "CapsuleMesh",
+    "appearance": "penguin_placeholder",
+    "count": 10,
+    "spawn_manager": "GameManager",
+    "ai": {
+      "movement": "random_wander",
+      "move_speed": "MOVE_SPEED",
+      "sprint": false,
+      "jump": true,
+      "jump_mode": "random_periodic"
+    },
+    "physics": {
+      "move_speed": "MOVE_SPEED",
+      "sprint_multiplier": null,
+      "jump_velocity": "JUMP_VELOCITY",
+      "gravity": 9.8
+    },
+    "on_hit": {
+      "effect": "fall_down",
+      "remove_after_sec": 2.0
+    }
+  },
+  "scripts": [
+    {
+      "file": "PlayerController.gd",
+      "node": "Player (CharacterBody3D)",
+      "responsibilities": ["WASD move", "Shift sprint x1.8", "Space jump", "RMB attack 2m"]
+    },
+    {
+      "file": "BotController.gd",
+      "node": "Bot (CharacterBody3D)",
+      "responsibilities": ["random wander", "periodic jump", "take_hit fall + 2s remove"]
+    },
+    {
+      "file": "MapGenerator.gd",
+      "node": "MapGenerator (Node3D)",
+      "responsibilities": ["50x50 floor", "4 boundary walls"]
+    },
+    {
+      "file": "GameManager.gd",
+      "node": "GameManager (Node)",
+      "responsibilities": ["spawn 10 bots at start"]
+    }
+  ],
+  "shared_constants": {
+    "MOVE_SPEED": "same for player and bot (숨바꼭질 특성)",
+    "JUMP_VELOCITY": "same for player and bot",
+    "SPRINT_MULTIPLIER": 1.8,
+    "ATTACK_RANGE_M": 2.0,
+    "BOT_FALL_DURATION_SEC": 2.0,
+    "BOT_COUNT": 10,
+    "MAP_SIZE_M": 50
+  },
+  "out_of_scope": ["match_timer", "animal_switch", "safe_zone", "rewards", "minimap", "multiplayer"]
+}

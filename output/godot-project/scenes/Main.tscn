@@ -1,0 +1,47 @@
+[gd_scene load_steps=6 format=3 uid="uid://main1234"]
+
+[ext_resource type="Script" uid="uid://b6gxw44k5nuft" path="res://scripts/PlayerController.gd" id="1_plctrl"]
+[ext_resource type="Script" uid="uid://mapgen001" path="res://scripts/MapGenerator.gd" id="2_mapgen"]
+[ext_resource type="Script" uid="uid://gamemgr001" path="res://scripts/GameManager.gd" id="3_gamemgr"]
+
+[sub_resource type="Environment" id="Environment_env001"]
+background_mode = 2
+ambient_light_source = 2
+ambient_light_color = Color(1, 1, 1, 1)
+ambient_light_energy = 0.5
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_player1"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_ply01"]
+
+[node name="Main" type="Node3D"]
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_env001")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.866025, -0.433013, 0.25, 0, 0.5, 0.866025, -0.5, -0.75, 0.433013, 0, 10, 0)
+shadow_enabled = true
+
+[node name="MapGenerator" type="Node3D" parent="."]
+script = ExtResource("2_mapgen")
+
+[node name="Player" type="CharacterBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+script = ExtResource("1_plctrl")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Player"]
+mesh = SubResource("CapsuleMesh_player1")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Player"]
+shape = SubResource("CapsuleShape3D_ply01")
+
+[node name="SpringArm3D" type="SpringArm3D" parent="Player"]
+transform = Transform3D(1, 0, 0, 0, 0.90630776, 0.42261827, 0, -0.42261827, 0.90630776, 0, 0, 0)
+spring_length = 6.0
+
+[node name="Camera3D" type="Camera3D" parent="Player/SpringArm3D"]
+current = true
+
+[node name="GameManager" type="Node" parent="."]
+script = ExtResource("3_gamemgr")
