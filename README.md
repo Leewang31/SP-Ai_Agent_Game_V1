@@ -96,12 +96,38 @@ godot --path output/godot-project
 
 ---
 
+## 🐧 펭귄 3D 모델
+
+Blender 5.1.2로 직접 제작한 로우폴리 펭귄 에셋 (`assets/penguin.glb`):
+
+| 항목 | 내용 |
+|------|------|
+| 메시 파츠 | 15개 (Body, Head, WingL/R, FootL/R, EyeL/R×2, Beak, Belly, FaceWhite, BlushL/R) |
+| 색상 | 파스텔 하늘색 + 흰색 (StandardMaterial3D, 투명도 없음) |
+| 리깅 | 11개 본 — root › spine › chest › neck › head, wing×2, leg+foot×2 |
+| 애니메이션 | 5개: **Idle** 2.5s / **Move** 1.7s / **Run** 0.8s / **Attack** 2.1s / **Die** 2.7s |
+| 파일 크기 | 108 KB |
+
+### 애니메이션 상태머신
+
+```
+           [이동]          [Sprint]
+  IDLE ──────────▶ MOVE ──────────▶ RUN
+   ▲                 │                │
+   └──[공격 종료]◀──ATTACK◀──[Q]──────┘
+   
+  DIE ◀──────────── [피격] (모든 상태에서 전환)
+```
+
+---
+
 ## 📋 개발 이력
 
 | 버전 | 내용 |
 |------|------|
 | MVP Day 1 | 큐브 플레이어 + 20×20 맵 기본 이동 |
 | 프로토타입 #001 | 펭귄(캡슐) 플레이어·봇 10마리, 50×50 맵, 공격·달리기·점프 |
+| 프로토타입 #002 | 로우폴리 펭귄 3D 모델 (리깅+5개 애니메이션) 인게임 적용 |
 
 ---
 

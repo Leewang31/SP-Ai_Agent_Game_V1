@@ -1,8 +1,8 @@
 [gd_scene load_steps=6 format=3 uid="uid://main1234"]
 
 [ext_resource type="Script" uid="uid://b6gxw44k5nuft" path="res://scripts/PlayerController.gd" id="1_plctrl"]
-[ext_resource type="Script" uid="uid://mapgen001" path="res://scripts/MapGenerator.gd" id="2_mapgen"]
-[ext_resource type="Script" uid="uid://gamemgr001" path="res://scripts/GameManager.gd" id="3_gamemgr"]
+[ext_resource type="Script" uid="uid://du3enwjyy13do" path="res://scripts/MapGenerator.gd" id="2_mapgen"]
+[ext_resource type="Script" uid="uid://676ky0hbixvd" path="res://scripts/GameManager.gd" id="3_gamemgr"]
 
 [sub_resource type="Environment" id="Environment_env001"]
 background_mode = 2
@@ -32,6 +32,7 @@ script = ExtResource("1_plctrl")
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="Player"]
 mesh = SubResource("CapsuleMesh_player1")
+visible = false
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Player"]
 shape = SubResource("CapsuleShape3D_ply01")
