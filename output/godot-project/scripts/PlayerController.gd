@@ -33,6 +33,10 @@ enum State { IDLE, MOVE, RUN, ATTACK, DIE }
 var _state : State         = State.IDLE
 var _anim  : AnimationPlayer = null
 
+# 네트워크 위치 전송 타이머
+var _net_timer   : float = 0.0
+const NET_INTERVAL : float = 0.1  # 100ms
+
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #  초기화
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -41,6 +45,11 @@ func _ready() -> void:
 	spring_arm.rotation.x    = deg_to_rad(-25.0)
 	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 	_spawn_penguin()
+	NetworkManager.player_killed.connect(_on_player_killed)
+
+func _on_player_killed(target_id: String) -> void:
+	if target_id == NetworkManager.local_player_id:
+		die()
 
 func _spawn_penguin() -> void:
 	var res := load(MODEL_PATH)
@@ -127,6 +136,13 @@ func _physics_process(delta: float) -> void:
 	if _state != State.ATTACK:
 		_update_state(input_dir, is_sprint)
 
+	# 네트워크 위치 전송 (100ms 간격)
+	_net_timer += delta
+	if _net_timer >= NET_INTERVAL:
+		_net_timer = 0.0
+		if NetworkManager.room_code != "":
+			NetworkManager.send_position(global_position, _state != State.DIE)
+
 func _get_input_dir() -> Vector2:
 	return Input.get_vector(
 		"move_left", "move_right", "move_backward", "move_forward"
@@ -149,11 +165,19 @@ func _do_attack() -> void:
 		return
 	_state = State.ATTACK
 	_play_anim("Penguin_Attack")
-	# 범위 내 봇 타격
+
+	# 봇 타격
 	for bot in get_tree().get_nodes_in_group("bots"):
 		if global_position.distance_to(bot.global_position) <= ATTACK_RANGE:
 			if bot.has_method("take_hit"):
 				bot.take_hit()
+			break
+
+	# 원격 플레이어 타격: kill 이벤트 브로드캐스트 → 피격자 클라이언트가 자신을 die()
+	# NOTE: 서버 권위 없이 공격자 클라이언트를 신뢰하는 구조. MVP 한계.
+	for remote in get_tree().get_nodes_in_group("remote_players"):
+		if global_position.distance_to(remote.global_position) <= ATTACK_RANGE:
+			NetworkManager.send_kill(remote.player_id)
 			break
 
 func die() -> void:
