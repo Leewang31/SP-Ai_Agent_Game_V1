@@ -13,3 +13,9 @@ output/godot-project/export_presets.cfg
 
 # Claude Code
 .claude/settings.local.json
+
+# Project wiki (meeting notes, not source)
+wiki/
+
+# Agent output logs (replaced by wiki)
+output/logs/
