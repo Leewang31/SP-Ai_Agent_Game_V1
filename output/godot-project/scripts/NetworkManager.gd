@@ -228,7 +228,12 @@ func _send_presence_track() -> void:
 		"ref": str(_ref_counter)
 	}
 	_send_json(msg)
-	# Broadcast 폴백: Presence diff 누락 시에도 상대방이 나를 인식하도록
+	_send_lobby_announce()
+
+## 내 정보를 Broadcast로 알림 (Presence 누락 폴백 + 핸드셰이크)
+func _send_lobby_announce() -> void:
+	if _my_nickname.is_empty() or not _connected:
+		return
 	_ref_counter += 1
 	var announce : Dictionary = {
 		"topic":   "realtime:game-room-" + room_code,
@@ -319,16 +324,19 @@ func _parse_message(text: String) -> void:
 				"game_start":
 					game_start_received.emit()
 				"lobby_announce":
-					# Presence 누락 폴백 — 상대방 정보를 Broadcast로 수신
 					var pid : String = str(inner.get("player_id", ""))
 					if pid.is_empty() or pid == local_player_id:
 						return
+					var is_new : bool = not _current_players.has(pid)
 					_current_players[pid] = {
 						"player_id": pid,
 						"nickname":  inner.get("nickname",  ""),
 						"is_host":   inner.get("is_host",   false)
 					}
 					player_list_updated.emit(_current_players.values())
+					# 처음 보는 플레이어면 내 정보도 알려줌 (핸드셰이크 — 1회만)
+					if is_new:
+						_send_lobby_announce()
 
 ## JSON 직렬화 후 WS 전송
 func _send_json(data: Dictionary) -> void:
