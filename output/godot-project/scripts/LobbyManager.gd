@@ -51,7 +51,7 @@ func _process(delta: float) -> void:
 		if _join_timer >= JOIN_TIMEOUT:
 			_join_checking = false
 			_join_timer    = 0.0
-			if NetworkManager._current_players.size() <= 1:
+			if NetworkManager.get_current_player_count() <= 1:
 				NetworkManager.leave_room()
 				_error_label.text    = "방을 찾을 수 없습니다."
 				_error_label.visible = true
@@ -200,6 +200,8 @@ func _show_menu() -> void:
 	_menu_panel.visible    = true
 	_join_panel.visible    = false
 	_waiting_panel.visible = false
+	if _error_label != null:
+		_error_label.visible = false
 
 func _show_join() -> void:
 	_state = State.JOIN_INPUT

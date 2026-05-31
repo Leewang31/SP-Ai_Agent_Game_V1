@@ -126,6 +126,10 @@ func join_room_with_presence(p_room_code: String, nickname: String, is_host: boo
 	_current_players  = {}
 	join_room(p_room_code)
 
+## 현재 대기실 참가자 수 반환 (LobbyManager가 방 존재 확인에 사용)
+func get_current_player_count() -> int:
+	return _current_players.size()
+
 ## WebSocket 연결 종료
 func leave_room() -> void:
 	if _ws == null:
