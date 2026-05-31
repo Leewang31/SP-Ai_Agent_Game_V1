@@ -209,6 +209,7 @@ func _send_heartbeat() -> void:
 	_send_json(hb)
 
 ## Presence track 이벤트 전송 — phx_reply ok 수신 후 1회 호출
+## + Broadcast lobby_announce 동시 전송 (Presence 누락 대비 폴백)
 func _send_presence_track() -> void:
 	if _my_nickname.is_empty() or not _connected:
 		return
@@ -227,6 +228,22 @@ func _send_presence_track() -> void:
 		"ref": str(_ref_counter)
 	}
 	_send_json(msg)
+	# Broadcast 폴백: Presence diff 누락 시에도 상대방이 나를 인식하도록
+	_ref_counter += 1
+	var announce : Dictionary = {
+		"topic":   "realtime:game-room-" + room_code,
+		"event":   "broadcast",
+		"payload": {
+			"event": "lobby_announce",
+			"payload": {
+				"player_id": local_player_id,
+				"nickname":  _my_nickname,
+				"is_host":   _my_is_host
+			}
+		},
+		"ref": str(_ref_counter)
+	}
+	_send_json(announce)
 
 ## presence_diff 처리 — joins/leaves 반영
 func _update_presence_from_diff(diff: Dictionary) -> void:
@@ -301,6 +318,17 @@ func _parse_message(text: String) -> void:
 						player_killed.emit(target_id)
 				"game_start":
 					game_start_received.emit()
+				"lobby_announce":
+					# Presence 누락 폴백 — 상대방 정보를 Broadcast로 수신
+					var pid : String = str(inner.get("player_id", ""))
+					if pid.is_empty() or pid == local_player_id:
+						return
+					_current_players[pid] = {
+						"player_id": pid,
+						"nickname":  inner.get("nickname",  ""),
+						"is_host":   inner.get("is_host",   false)
+					}
+					player_list_updated.emit(_current_players.values())
 
 ## JSON 직렬화 후 WS 전송
 func _send_json(data: Dictionary) -> void:
