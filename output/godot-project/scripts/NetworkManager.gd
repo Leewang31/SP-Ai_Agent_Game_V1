@@ -42,12 +42,12 @@ func join_room(p_room_code: String) -> void:
 	room_code = p_room_code
 	_ws = WebSocketPeer.new()
 
-	var headers : PackedStringArray = PackedStringArray([
+	_ws.handshake_headers = PackedStringArray([
 		"apikey: " + SUPABASE_ANON_KEY,
 		"Authorization: Bearer " + SUPABASE_ANON_KEY
 	])
 
-	var err := _ws.connect_to_url(SUPABASE_WS_URL, TLSOptions.client_unsafe(), headers)
+	var err := _ws.connect_to_url(SUPABASE_WS_URL, TLSOptions.client())
 	if err != OK:
 		push_error("[NetworkManager] WebSocket 연결 실패: " + str(err))
 		return
