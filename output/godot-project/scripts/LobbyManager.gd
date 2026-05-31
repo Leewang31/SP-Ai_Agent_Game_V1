@@ -51,11 +51,9 @@ func _process(delta: float) -> void:
 		if _join_timer >= JOIN_TIMEOUT:
 			_join_checking = false
 			_join_timer    = 0.0
+			# 방장 없으면 안내만 — 강제 종료 없이 유저가 직접 나가기 선택
 			if NetworkManager.get_current_player_count() <= 1:
-				NetworkManager.leave_room()
-				_error_label.text    = "방을 찾을 수 없습니다."
-				_error_label.visible = true
-				_show_menu()
+				_status_label.text = "방장을 찾을 수 없습니다. 코드를 확인하세요."
 
 # ─── UI 빌드 ─────────────────────────────────────
 func _build_ui() -> void:
@@ -194,6 +192,12 @@ func _build_waiting_panel() -> void:
 	_start_btn.pressed.connect(_on_start_pressed)
 	_waiting_panel.add_child(_start_btn)
 
+	var leave_btn := Button.new()
+	leave_btn.text = "← 나가기"
+	leave_btn.custom_minimum_size = Vector2(0, 36)
+	leave_btn.pressed.connect(_on_leave_waiting)
+	_waiting_panel.add_child(leave_btn)
+
 # ─── 패널 전환 ────────────────────────────────────
 func _show_menu() -> void:
 	_state = State.MENU
@@ -251,6 +255,12 @@ func _on_join_confirm() -> void:
 func _on_start_pressed() -> void:
 	if _is_host:
 		NetworkManager.send_game_start()
+
+func _on_leave_waiting() -> void:
+	NetworkManager.leave_room()
+	_join_checking = false
+	_join_timer    = 0.0
+	_show_menu()
 
 func _on_player_list_updated(players: Array) -> void:
 	for child in _player_list.get_children():
