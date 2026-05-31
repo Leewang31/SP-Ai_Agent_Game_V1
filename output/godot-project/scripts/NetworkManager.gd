@@ -229,7 +229,10 @@ func _update_presence_from_diff(diff: Dictionary) -> void:
 	var joins  : Dictionary = diff.get("joins",  {})
 	var leaves : Dictionary = diff.get("leaves", {})
 	for pid in joins:
-		var meta : Dictionary = joins[pid].get("metas", [{}])[0]
+		var metas : Array = joins[pid].get("metas", [])
+		if metas.is_empty():
+			continue
+		var meta : Dictionary = metas[0]
 		_current_players[pid] = {
 			"player_id": meta.get("player_id", pid),
 			"nickname":  meta.get("nickname",  ""),
@@ -258,7 +261,10 @@ func _parse_message(text: String) -> void:
 			_current_players.clear()
 			var payload : Dictionary = data.get("payload", {})
 			for pid in payload:
-				var meta : Dictionary = payload[pid].get("metas", [{}])[0]
+				var metas : Array = payload[pid].get("metas", [])
+				if metas.is_empty():
+					continue
+				var meta : Dictionary = metas[0]
 				_current_players[pid] = {
 					"player_id": meta.get("player_id", pid),
 					"nickname":  meta.get("nickname",  ""),
@@ -277,7 +283,7 @@ func _parse_message(text: String) -> void:
 			match ev:
 				"pos":
 					var pid : String = str(inner.get("id", ""))
-					if pid == local_player_id:
+					if pid.is_empty() or pid == local_player_id:
 						return
 					var pos := Vector3(
 						float(inner.get("x", 0.0)),
