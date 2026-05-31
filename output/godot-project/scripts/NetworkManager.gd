@@ -14,6 +14,8 @@ extends Node
 signal position_received(player_id: String, pos: Vector3, alive: bool)
 signal player_killed(target_id: String)
 signal player_left(player_id: String)
+signal player_list_updated(players: Array)
+signal game_start_received
 
 # ─── 상수 ────────────────────────────────────────
 const SUPABASE_ANON_KEY : String = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndncXh2dmZicW9paWNsbWdqYWRhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAwMzE3NTYsImV4cCI6MjA5NTYwNzc1Nn0.9GtMYNvclgleKkBA-68LH2V16HZdkrUkSKj2QBAerhU"
@@ -29,6 +31,11 @@ var _ws              : WebSocketPeer   = null
 var _ref_counter     : int             = 0
 var _heartbeat_timer : float           = 0.0
 var _connected       : bool            = false
+
+var _my_nickname      : String     = ""
+var _my_is_host       : bool       = false
+var _presence_tracked : bool       = false
+var _current_players  : Dictionary = {}
 
 # ─── 초기화 ──────────────────────────────────────
 func _ready() -> void:
@@ -55,6 +62,19 @@ func join_room(p_room_code: String) -> void:
 	_connected  = false
 	_heartbeat_timer = 0.0
 	print("[NetworkManager] WS 연결 시도: room=" + room_code)
+
+## 게임 시작 이벤트 브로드캐스트 (호스트가 호출)
+func send_game_start() -> void:
+	if not _connected:
+		return
+	_ref_counter += 1
+	var msg : Dictionary = {
+		"topic":   "realtime:game-room-" + room_code,
+		"event":   "broadcast",
+		"payload": {"event": "game_start", "payload": {}},
+		"ref":     str(_ref_counter)
+	}
+	_send_json(msg)
 
 ## 특정 플레이어를 죽이는 kill 이벤트 브로드캐스트
 func send_kill(target_player_id: String) -> void:
@@ -98,12 +118,22 @@ func send_position(pos: Vector3, alive: bool) -> void:
 	}
 	_send_json(msg)
 
+## Presence 정보(닉네임, 호스트 여부)와 함께 룸에 참여
+func join_room_with_presence(p_room_code: String, nickname: String, is_host: bool) -> void:
+	_my_nickname      = nickname
+	_my_is_host       = is_host
+	_presence_tracked = false
+	_current_players  = {}
+	join_room(p_room_code)
+
 ## WebSocket 연결 종료
 func leave_room() -> void:
 	if _ws == null:
 		return
-	room_code    = ""
-	_connected   = false
+	room_code         = ""
+	_connected        = false
+	_presence_tracked = false
+	_current_players.clear()
 	_ws.close()
 	_ws = null
 	print("[NetworkManager] WS 연결 종료")
@@ -155,7 +185,8 @@ func _on_ws_connected() -> void:
 		"event":   "phx_join",
 		"payload": {
 			"config": {
-				"broadcast": {"self": true}
+				"broadcast": {"self": true},
+				"presence":  {"key": local_player_id}
 			}
 		},
 		"ref": str(_ref_counter)
@@ -173,42 +204,93 @@ func _send_heartbeat() -> void:
 	}
 	_send_json(hb)
 
-## 수신 메시지 파싱 — event=="broadcast" && payload.event=="pos" 처리
+## Presence track 이벤트 전송 — phx_reply ok 수신 후 1회 호출
+func _send_presence_track() -> void:
+	if _my_nickname.is_empty() or not _connected:
+		return
+	_ref_counter += 1
+	var msg : Dictionary = {
+		"topic":   "realtime:game-room-" + room_code,
+		"event":   "presence",
+		"payload": {
+			"event": "track",
+			"payload": {
+				"nickname":  _my_nickname,
+				"is_host":   _my_is_host,
+				"player_id": local_player_id
+			}
+		},
+		"ref": str(_ref_counter)
+	}
+	_send_json(msg)
+
+## presence_diff 처리 — joins/leaves 반영
+func _update_presence_from_diff(diff: Dictionary) -> void:
+	var joins  : Dictionary = diff.get("joins",  {})
+	var leaves : Dictionary = diff.get("leaves", {})
+	for pid in joins:
+		var meta : Dictionary = joins[pid].get("metas", [{}])[0]
+		_current_players[pid] = {
+			"player_id": meta.get("player_id", pid),
+			"nickname":  meta.get("nickname",  ""),
+			"is_host":   meta.get("is_host",   false)
+		}
+	for pid in leaves:
+		_current_players.erase(pid)
+
+## 수신 메시지 파싱 — Phoenix 이벤트 전체 처리
 func _parse_message(text: String) -> void:
 	var json := JSON.new()
-	var err  := json.parse(text)
-	if err != OK:
-		push_warning("[NetworkManager] JSON 파싱 실패: " + text)
+	if json.parse(text) != OK:
 		return
 
-	var data : Dictionary = json.get_data()
+	var data  : Dictionary = json.get_data()
+	var event : String     = data.get("event", "")
 
-	# broadcast 이벤트만 처리
-	if data.get("event", "") != "broadcast":
-		return
+	match event:
+		"phx_reply":
+			var status : String = data.get("payload", {}).get("status", "")
+			if status == "ok" and not _presence_tracked and not _my_nickname.is_empty():
+				_presence_tracked = true
+				_send_presence_track()
 
-	var outer_payload : Dictionary = data.get("payload", {})
-	var ev : String = outer_payload.get("event", "")
-	var inner : Dictionary = outer_payload.get("payload", {})
+		"presence_state":
+			_current_players.clear()
+			var payload : Dictionary = data.get("payload", {})
+			for pid in payload:
+				var meta : Dictionary = payload[pid].get("metas", [{}])[0]
+				_current_players[pid] = {
+					"player_id": meta.get("player_id", pid),
+					"nickname":  meta.get("nickname",  ""),
+					"is_host":   meta.get("is_host",   false)
+				}
+			player_list_updated.emit(_current_players.values())
 
-	match ev:
-		"pos":
-			var pid : String = str(inner.get("id", ""))
-			if pid == local_player_id:
-				return
-			var pos := Vector3(
-				float(inner.get("x", 0.0)),
-				float(inner.get("y", 0.0)),
-				float(inner.get("z", 0.0))
-			)
-			var alive : bool = bool(inner.get("alive", true))
-			position_received.emit(pid, pos, alive)
+		"presence_diff":
+			_update_presence_from_diff(data.get("payload", {}))
+			player_list_updated.emit(_current_players.values())
 
-		"kill":
-			var target_id : String = str(inner.get("target_id", ""))
-			if target_id.is_empty():
-				return
-			player_killed.emit(target_id)
+		"broadcast":
+			var outer_payload : Dictionary = data.get("payload", {})
+			var ev            : String     = outer_payload.get("event", "")
+			var inner         : Dictionary = outer_payload.get("payload", {})
+			match ev:
+				"pos":
+					var pid : String = str(inner.get("id", ""))
+					if pid == local_player_id:
+						return
+					var pos := Vector3(
+						float(inner.get("x", 0.0)),
+						float(inner.get("y", 0.0)),
+						float(inner.get("z", 0.0))
+					)
+					position_received.emit(pid, pos, bool(inner.get("alive", true)))
+				"kill":
+					var target_id : String = str(inner.get("target_id", ""))
+					if not target_id.is_empty():
+						player_killed.emit(target_id)
+				"game_start":
+					game_start_received.emit()
 
 ## JSON 직렬화 후 WS 전송
 func _send_json(data: Dictionary) -> void:
