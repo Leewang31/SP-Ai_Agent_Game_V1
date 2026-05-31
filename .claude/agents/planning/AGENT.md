@@ -24,6 +24,29 @@
 
 ## 수행 작업
 
+### 0. Office Hours 세션 실행 (기획 분석 시작 전 필수)
+
+메인으로부터 기획 분석 작업을 받으면 **파싱 전에 반드시** `/office-hours` 스킬을 실행한다.
+
+**목적:** 기획서의 방향성·범위·전제를 검토하고, 모호한 요구사항을 구조화된 질문을 통해 명확히 한다.
+
+**실행 조건:**
+- 신규 기획 분석 요청 시 (항상)
+- 기획서 대규모 수정 요청 시 (변경 범위가 시스템 1개 이상에 영향 시)
+- 메인이 "office-hours 생략" 명시 시 → 스킵 가능
+
+**실행 방법:**
+```
+Skill("office-hours")
+```
+
+**Office Hours 완료 후:**
+- 회의 결과(설계 문서)를 `/wiki/meetings/YYYYMMDD_<주제>.md`에 저장
+- 확정된 전제(Premises)와 선택된 접근법(Approach)을 기획서 파싱 입력으로 활용
+- 메인에게 회의 완료 및 저장 경로 보고
+
+---
+
 ### 1. 기획서 파싱
 `spec-parser` 스킬(`parse_spec.py`)을 사용하여 기획서를 읽고 아래 항목을 추출한다.
 
@@ -50,9 +73,9 @@
 메인으로부터 기획서 수정 지시를 받은 경우 아래 절차를 반드시 따른다.
 
 **수정 절차:**
-1. 수정 전 현재 기획서를 `/output/logs/spec-history/` 폴더에 백업
+1. 수정 전 현재 기획서를 `/wiki/meetings/spec-history/` 폴더에 백업
 2. 백업 파일명 형식: `게임_기획_명세서_YYYYMMDD_HHMMSS.md`
-3. `/output/logs/spec-history/spec_changelog.md`에 변경 이력 기록
+3. `/wiki/meetings/spec_changelog.md`에 변경 이력 기록
 4. 원본 `게임_기획_명세서.md` 수정
 5. 메인에게 수정 완료 보고
 
@@ -91,7 +114,7 @@
 - 모호 항목 목록 및 임시 처리 방침
 
 ### 수정 작업 완료 시
-`/output/logs/spec-history/spec_changelog.md`에 아래 형식으로 기록한다.
+`/wiki/meetings/spec_changelog.md`에 아래 형식으로 기록한다.
 
 ```
 ## [순번] YYYY-MM-DD HH:MM
@@ -123,6 +146,7 @@
 
 ## 사용 스킬
 
+- `office-hours` — 기획 세션 시작 시 요구사항 브레인스토밍 및 전제 검토 (gstack)
 - `spec-parser` — 기획서 마크다운 파싱 및 JSON 구조체 변환
 
 ---
@@ -141,8 +165,8 @@
 ### 수정 완료 시
 ```
 [기획팀] 기획서 수정 완료
-- 백업 파일: /output/logs/spec-history/게임_기획_명세서_YYYYMMDD_HHMMSS.md
-- 변경 내역: /output/logs/spec-history/spec_changelog.md
+- 백업 파일: /wiki/meetings/spec-history/게임_기획_명세서_YYYYMMDD_HHMMSS.md
+- 변경 내역: /wiki/meetings/spec_changelog.md
 - 수정 요약: (변경 내용 한 줄)
 - 영향 받는 팀: (디자인팀 재작업 필요 여부 등)
 ```
