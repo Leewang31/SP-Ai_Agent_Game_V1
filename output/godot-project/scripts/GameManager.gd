@@ -23,7 +23,7 @@ func _ready() -> void:
 	NetworkManager.position_received.connect(_on_position_received)
 	NetworkManager.player_killed.connect(_on_player_killed)
 	NetworkManager.player_left.connect(_on_player_left)
-	join_room("TEST")  # TODO: 실제 서비스에서는 로비 UI에서 룸코드 입력받아야 함
+	# join_room은 LobbyManager가 담당 — 여기서 호출하지 않음
 
 # ─── 봇 스폰 ─────────────────────────────────────
 func _spawn_bots() -> void:
