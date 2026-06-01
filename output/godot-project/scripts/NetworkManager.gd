@@ -11,7 +11,7 @@
 extends Node
 
 # ─── 시그널 ───────────────────────────────────────
-signal position_received(player_id: String, pos: Vector3, alive: bool)
+signal position_received(player_id: String, pos: Vector3, rot_y: float, alive: bool)
 signal player_killed(target_id: String)
 signal player_left(player_id: String)
 signal player_list_updated(players: Array)
@@ -109,8 +109,8 @@ func send_kill(target_player_id: String) -> void:
 	}
 	_send_json(msg)
 
-## 내 위치를 Broadcast로 전송 (100ms마다 PlayerController가 호출)
-func send_position(pos: Vector3, alive: bool) -> void:
+## 내 위치+회전을 Broadcast로 전송 (100ms마다 PlayerController가 호출)
+func send_position(pos: Vector3, rot_y: float, alive: bool) -> void:
 	if not _connected:
 		return
 
@@ -125,6 +125,7 @@ func send_position(pos: Vector3, alive: bool) -> void:
 				"x":     pos.x,
 				"y":     pos.y,
 				"z":     pos.z,
+				"rot_y": rot_y,
 				"alive": alive
 			}
 		},
@@ -330,7 +331,8 @@ func _parse_message(text: String) -> void:
 						float(inner.get("y", 0.0)),
 						float(inner.get("z", 0.0))
 					)
-					position_received.emit(pid, pos, bool(inner.get("alive", true)))
+					var rot_y := float(inner.get("rot_y", 0.0))
+					position_received.emit(pid, pos, rot_y, bool(inner.get("alive", true)))
 				"kill":
 					var target_id : String = str(inner.get("target_id", ""))
 					if not target_id.is_empty():

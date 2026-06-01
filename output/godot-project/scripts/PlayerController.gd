@@ -141,7 +141,7 @@ func _physics_process(delta: float) -> void:
 	if _net_timer >= NET_INTERVAL:
 		_net_timer = 0.0
 		if NetworkManager.room_code != "":
-			NetworkManager.send_position(global_position, _state != State.DIE)
+			NetworkManager.send_position(global_position, rotation.y, _state != State.DIE)
 
 func _get_input_dir() -> Vector2:
 	return Input.get_vector(

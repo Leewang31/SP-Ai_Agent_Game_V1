@@ -18,8 +18,9 @@ const LERP_SPEED  : float  = 10.0
 var player_id    : String  = ""
 var alive        : bool    = true
 
-var _target_pos  : Vector3 = Vector3.ZERO
-var _initialized : bool    = false  # 첫 위치 수신 전까지 숨김
+var _target_pos   : Vector3 = Vector3.ZERO
+var _target_rot_y : float   = 0.0
+var _initialized  : bool    = false  # 첫 위치 수신 전까지 숨김
 var _anim        : AnimationPlayer = null
 
 # ─── 초기화 ──────────────────────────────────────
@@ -65,23 +66,27 @@ func _find_anim_player(node: Node) -> AnimationPlayer:
 
 # ─── 물리 처리 ────────────────────────────────────
 
-## 매 물리 프레임마다 목표 위치로 선형 보간 이동
+## 매 물리 프레임마다 목표 위치·회전으로 선형 보간 이동
 func _physics_process(delta: float) -> void:
 	global_position = global_position.lerp(_target_pos, LERP_SPEED * delta)
+	rotation.y = lerp_angle(rotation.y, _target_rot_y, LERP_SPEED * delta)
 
 # ─── 공개 API ─────────────────────────────────────
 
 ## GameManager가 NetworkManager 시그널 수신 후 호출.
-## queue_free()는 GameManager가 담당 — 이 함수는 위치/상태 갱신만.
-func update_position(pos: Vector3, is_alive: bool) -> void:
+## queue_free()는 GameManager가 담당 — 이 함수는 위치/회전/상태 갱신만.
+func update_position(pos: Vector3, rot_y: float, is_alive: bool) -> void:
 	if not _initialized:
 		# 첫 수신: 보간 없이 순간이동 후 표시
 		global_position = pos
+		rotation.y      = rot_y
 		_target_pos     = pos
+		_target_rot_y   = rot_y
 		_initialized    = true
 		visible         = true
 	else:
-		_target_pos = pos
+		_target_pos   = pos
+		_target_rot_y = rot_y
 
 	alive = is_alive
 	if not alive:

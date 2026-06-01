@@ -46,7 +46,7 @@ func join_room(room_code: String) -> void:
 
 ## 원격 플레이어 위치 수신 시 호출.
 ## 처음 수신된 player_id면 RemotePlayer 노드를 동적 스폰.
-func _on_position_received(player_id: String, pos: Vector3, alive: bool) -> void:
+func _on_position_received(player_id: String, pos: Vector3, rot_y: float, alive: bool) -> void:
 	if not _remote_players.has(player_id):
 		var rp := CharacterBody3D.new()
 		rp.set_script(REMOTE_PLAYER_SCENE)
@@ -57,7 +57,7 @@ func _on_position_received(player_id: String, pos: Vector3, alive: bool) -> void
 		if _ever_seen_players >= 1:  # 상대 1명 이상 만나면 게임 시작
 			_game_started = true
 
-	_remote_players[player_id].update_position(pos, alive)
+	_remote_players[player_id].update_position(pos, rot_y, alive)
 
 ## kill 이벤트 수신 — 타겟 RemotePlayer 제거 + 승리 판정
 func _on_player_killed(target_id: String) -> void:
