@@ -17,13 +17,14 @@ const REMOTE_PLAYER_SCENE = preload("res://scripts/RemotePlayer.gd")
 var _remote_players   : Dictionary = {}  # player_id (String) -> RemotePlayer 노드
 var _game_started     : bool       = false
 var _ever_seen_players : int       = 0   # 한 번이라도 접속한 원격 플레이어 수
+var _game_start_time : int = 0
 
 func _ready() -> void:
+	_game_start_time = Time.get_ticks_msec()
 	_spawn_bots()
 	NetworkManager.position_received.connect(_on_position_received)
 	NetworkManager.player_killed.connect(_on_player_killed)
 	NetworkManager.player_left.connect(_on_player_left)
-	# join_room은 LobbyManager가 담당 — 여기서 호출하지 않음
 
 # ─── 봇 스폰 ─────────────────────────────────────
 func _spawn_bots() -> void:
@@ -80,6 +81,11 @@ func _on_player_left(player_id: String) -> void:
 func _check_win_condition() -> void:
 	if not _game_started:
 		return
-	if _remote_players.is_empty():
-		print("[GameManager] 승리! 최후의 1인.")
-		# TODO: 승리 UI 표시 구현 필요
+	if not _remote_players.is_empty():
+		return
+	var elapsed_sec : float = (Time.get_ticks_msec() - _game_start_time) / 1000.0
+	var player := get_parent().get_node_or_null("Player")
+	var kills  : int = player.kill_count if player else 0
+	var hud    := get_parent().get_node_or_null("HUD")
+	if hud:
+		hud.show_win_screen(elapsed_sec, kills)
