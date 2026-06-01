@@ -40,6 +40,7 @@ var _current_players  : Dictionary = {}
 
 # ─── 초기화 ──────────────────────────────────────
 func _ready() -> void:
+	process_mode    = Node.PROCESS_MODE_ALWAYS
 	# local_player_id는 세션마다 고유한 값으로 생성
 	local_player_id = str(randi()) + str(Time.get_ticks_msec())
 
