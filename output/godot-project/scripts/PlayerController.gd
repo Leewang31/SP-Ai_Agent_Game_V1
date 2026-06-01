@@ -100,10 +100,9 @@ func _input(event: InputEvent) -> void:
 		spring_arm.rotate_x(-event.relative.y * mouse_sensitivity)
 		spring_arm.rotation.x = clamp(spring_arm.rotation.x, CAM_PITCH_MIN, CAM_PITCH_MAX)
 	elif event.is_action_pressed("ui_cancel") and not event.is_echo():
-		if _state != State.DIE:
-			var hud := get_parent().get_node_or_null("HUD")
-			if hud:
-				hud.toggle_pause_menu()
+		var hud := get_parent().get_node_or_null("HUD")
+		if hud:
+			hud.toggle_pause_menu()
 	elif event.is_action_pressed("attack") and not event.is_echo():
 		_do_attack()
 
