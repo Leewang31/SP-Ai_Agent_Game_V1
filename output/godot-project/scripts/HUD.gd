@@ -51,6 +51,10 @@ func toggle_pause_menu() -> void:
 	else:
 		_open_pause_menu()
 
+func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("ui_cancel") and _pause_menu.visible:
+		_close_pause_menu()
+
 # ── 내부 ────────────────────────────────────────────────────────────
 
 func _open_pause_menu() -> void:
