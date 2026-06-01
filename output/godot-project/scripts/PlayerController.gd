@@ -9,7 +9,7 @@ const JUMP_VELOCITY     : float = 4.5
 const GRAVITY           : float = 9.8
 const ATTACK_RANGE      : float = 2.0
 const CAM_DISTANCE      : float = 6.0
-const MOUSE_SENSITIVITY : float = 0.003
+var mouse_sensitivity : float = 0.003
 const CAM_PITCH_MIN     : float = -1.22
 const CAM_PITCH_MAX     : float =  0.35
 
@@ -34,6 +34,7 @@ var _state : State         = State.IDLE
 var _anim  : AnimationPlayer = null
 
 # 네트워크 위치 전송 타이머
+var kill_count   : int   = 0
 var _net_timer   : float = 0.0
 const NET_INTERVAL : float = 0.1  # 100ms
 
@@ -95,14 +96,14 @@ func _input(event: InputEvent) -> void:
 	if _state == State.DIE:
 		return
 	if event is InputEventMouseMotion:
-		rotate_y(-event.relative.x * MOUSE_SENSITIVITY)
-		spring_arm.rotate_x(-event.relative.y * MOUSE_SENSITIVITY)
+		rotate_y(-event.relative.x * mouse_sensitivity)
+		spring_arm.rotate_x(-event.relative.y * mouse_sensitivity)
 		spring_arm.rotation.x = clamp(spring_arm.rotation.x, CAM_PITCH_MIN, CAM_PITCH_MAX)
 	elif event.is_action_pressed("ui_cancel") and not event.is_echo():
-		var captured := Input.get_mouse_mode() == Input.MOUSE_MODE_CAPTURED
-		Input.set_mouse_mode(
-			Input.MOUSE_MODE_VISIBLE if captured else Input.MOUSE_MODE_CAPTURED
-		)
+		if _state != State.DIE:
+			var hud := get_parent().get_node_or_null("HUD")
+			if hud:
+				hud.toggle_pause_menu()
 	elif event.is_action_pressed("attack") and not event.is_echo():
 		_do_attack()
 
@@ -178,6 +179,7 @@ func _do_attack() -> void:
 	for remote in get_tree().get_nodes_in_group("remote_players"):
 		if global_position.distance_to(remote.global_position) <= ATTACK_RANGE:
 			NetworkManager.send_kill(remote.player_id)
+			kill_count += 1
 			break
 
 func die() -> void:
@@ -186,6 +188,9 @@ func die() -> void:
 	_state = State.DIE
 	velocity = Vector3.ZERO
 	_play_anim("Penguin_Die")
+	var hud := get_parent().get_node_or_null("HUD")
+	if hud:
+		hud.show_death_screen()
 
 func _on_anim_finished(anim_name: String) -> void:
 	if anim_name == "Penguin_Attack":
