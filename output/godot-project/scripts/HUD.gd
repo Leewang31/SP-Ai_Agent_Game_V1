@@ -39,6 +39,8 @@ func show_win_screen(elapsed_sec: float, kills: int) -> void:
 
 func show_death_screen() -> void:
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+	if _player:
+		_player.set_physics_process(false)
 	_death_hud.show()
 
 func toggle_pause_menu() -> void:
