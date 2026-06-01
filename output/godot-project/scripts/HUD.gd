@@ -42,6 +42,8 @@ func show_death_screen() -> void:
 	_death_hud.show()
 
 func toggle_pause_menu() -> void:
+	if _win_screen.visible or _death_hud.visible:
+		return
 	if _pause_menu.visible:
 		_close_pause_menu()
 	else:
@@ -57,7 +59,8 @@ func _open_pause_menu() -> void:
 func _close_pause_menu() -> void:
 	_pause_menu.hide()
 	get_tree().paused = false
-	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
+	if not _death_hud.visible and not _win_screen.visible:
+		Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 
 func _leave_game() -> void:
 	get_tree().paused = false
@@ -86,14 +89,18 @@ func _make_button(label: String, bg: Color, fg: Color) -> Button:
 	btn.text = label
 	btn.add_theme_color_override("font_color", fg)
 	btn.custom_minimum_size = Vector2(200, 40)
-	var s := StyleBoxFlat.new()
-	s.bg_color                   = bg
-	s.corner_radius_top_left     = 8
-	s.corner_radius_top_right    = 8
-	s.corner_radius_bottom_left  = 8
-	s.corner_radius_bottom_right = 8
-	for state in ["normal", "hover", "pressed", "focus"]:
-		btn.add_theme_stylebox_override(state, s)
+	var _make_style := func(col: Color) -> StyleBoxFlat:
+		var s := StyleBoxFlat.new()
+		s.bg_color                   = col
+		s.corner_radius_top_left     = 8
+		s.corner_radius_top_right    = 8
+		s.corner_radius_bottom_left  = 8
+		s.corner_radius_bottom_right = 8
+		return s
+	btn.add_theme_stylebox_override("normal",  _make_style.call(bg))
+	btn.add_theme_stylebox_override("hover",   _make_style.call(bg.lightened(0.15)))
+	btn.add_theme_stylebox_override("pressed", _make_style.call(bg.darkened(0.15)))
+	btn.add_theme_stylebox_override("focus",   _make_style.call(bg))
 	return btn
 
 # ── UI 빌드: 승리 화면 ───────────────────────────────────────────────
