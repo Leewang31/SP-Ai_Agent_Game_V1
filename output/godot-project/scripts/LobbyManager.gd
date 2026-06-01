@@ -44,6 +44,7 @@ func _ready() -> void:
 	_show_menu()
 	NetworkManager.player_list_updated.connect(_on_player_list_updated)
 	NetworkManager.game_start_received.connect(_on_game_start_received)
+	NetworkManager.host_left_received.connect(_on_host_left_received)
 
 func _process(delta: float) -> void:
 	if _join_checking:
@@ -257,9 +258,19 @@ func _on_start_pressed() -> void:
 		NetworkManager.send_game_start()
 
 func _on_leave_waiting() -> void:
+	if _is_host:
+		NetworkManager.send_host_left()
 	NetworkManager.leave_room()
 	_join_checking = false
 	_join_timer    = 0.0
+	_show_menu()
+
+func _on_host_left_received() -> void:
+	NetworkManager.leave_room()
+	_join_checking = false
+	_join_timer    = 0.0
+	_error_label.text    = "방장이 방을 나갔습니다."
+	_error_label.visible = true
 	_show_menu()
 
 func _on_player_list_updated(players: Array) -> void:

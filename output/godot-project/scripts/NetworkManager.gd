@@ -16,6 +16,7 @@ signal player_killed(target_id: String)
 signal player_left(player_id: String)
 signal player_list_updated(players: Array)
 signal game_start_received
+signal host_left_received
 
 # ─── 상수 ────────────────────────────────────────
 const SUPABASE_ANON_KEY : String = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndncXh2dmZicW9paWNsbWdqYWRhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAwMzE3NTYsImV4cCI6MjA5NTYwNzc1Nn0.9GtMYNvclgleKkBA-68LH2V16HZdkrUkSKj2QBAerhU"
@@ -72,6 +73,19 @@ func send_game_start() -> void:
 		"topic":   "realtime:game-room-" + room_code,
 		"event":   "broadcast",
 		"payload": {"event": "game_start", "payload": {}},
+		"ref":     str(_ref_counter)
+	}
+	_send_json(msg)
+
+## 방장 퇴장 알림 브로드캐스트 (방 폭파)
+func send_host_left() -> void:
+	if not _connected:
+		return
+	_ref_counter += 1
+	var msg : Dictionary = {
+		"topic":   "realtime:game-room-" + room_code,
+		"event":   "broadcast",
+		"payload": {"event": "host_left", "payload": {}},
 		"ref":     str(_ref_counter)
 	}
 	_send_json(msg)
@@ -323,6 +337,8 @@ func _parse_message(text: String) -> void:
 						player_killed.emit(target_id)
 				"game_start":
 					game_start_received.emit()
+				"host_left":
+					host_left_received.emit()
 				"lobby_announce":
 					var pid : String = str(inner.get("player_id", ""))
 					if pid.is_empty() or pid == local_player_id:
