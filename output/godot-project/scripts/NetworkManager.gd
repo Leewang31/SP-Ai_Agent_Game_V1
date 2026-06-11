@@ -278,7 +278,11 @@ func _update_presence_from_diff(diff: Dictionary) -> void:
 			"is_host":   meta.get("is_host",   false)
 		}
 	for pid in leaves:
+		var info : Dictionary = _current_players.get(pid, {})
 		_current_players.erase(pid)
+		var real_pid : String = info.get("player_id", pid)
+		if not real_pid.is_empty():
+			player_left.emit(real_pid)
 
 ## 수신 메시지 파싱 — Phoenix 이벤트 전체 처리
 func _parse_message(text: String) -> void:
