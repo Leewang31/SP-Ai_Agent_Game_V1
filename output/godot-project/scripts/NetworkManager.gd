@@ -63,7 +63,6 @@ func join_room(p_room_code: String) -> void:
 
 	_connected  = false
 	_heartbeat_timer = 0.0
-	print("[NetworkManager] WS 연결 시도: room=" + room_code)
 
 ## 게임 시작 이벤트 브로드캐스트 (호스트가 호출)
 func send_game_start() -> void:
@@ -156,7 +155,6 @@ func leave_room() -> void:
 	_current_players.clear()
 	_ws.close()
 	_ws = null
-	print("[NetworkManager] WS 연결 종료")
 
 # ─── 내부 처리 ────────────────────────────────────
 
@@ -198,7 +196,6 @@ func _process(delta: float) -> void:
 
 ## WS 연결 완료 시 Phoenix phx_join 전송
 func _on_ws_connected() -> void:
-	print("[NetworkManager] WS 연결 성공. 채널 join: game-room-" + room_code)
 	_ref_counter += 1
 	var join_msg : Dictionary = {
 		"topic":   "realtime:game-room-" + room_code,
